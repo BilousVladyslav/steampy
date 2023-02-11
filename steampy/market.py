@@ -104,7 +104,8 @@ class SteamMarket:
         }
         headers = {'Referer': "%s/profiles/%s/inventory" % (SteamUrl.COMMUNITY_URL, self._steam_guard['steamid'])}
         response = self._session.post(SteamUrl.COMMUNITY_URL + "/market/sellitem/", data, headers=headers).json()
-        if response.get("needs_mobile_confirmation"):
+        has_pending_confirmation = 'pending confirmation' in response.get('message', '')
+        if response.get("needs_mobile_confirmation") or (response.get('success') is False and has_pending_confirmation):
             return self._confirm_sell_listing(assetid)
         return response
 
@@ -119,7 +120,7 @@ class SteamMarket:
             "price_total": str(Decimal(price_single_item) * Decimal(quantity)),
             "quantity": quantity
         }
-        headers = {'Referer': "%s/market/listings/%s/%s" % (SteamUrl.COMMUNITY_URL, game.app_id, 
+        headers = {'Referer': "%s/market/listings/%s/%s" % (SteamUrl.COMMUNITY_URL, game.app_id,
                                                             urllib.parse.quote(market_name))}
         response = self._session.post(SteamUrl.COMMUNITY_URL + "/market/createbuyorder/", data,
                                       headers=headers).json()
